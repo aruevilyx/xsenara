@@ -422,7 +422,7 @@
                         <p class="text-[10px] text-slate-500 italic"><i class="fa-solid fa-hand-pointer mr-1"></i> Geser objek untuk memutar</p>
                     </div>
 
-                    <div id="canvas3DContainer" class="w-full ${obj.isSystem ? 'h-80' : 'h-52'} bg-slate-950/80 rounded-2xl border border-slate-800/80 relative overflow-hidden flex items-center justify-center cursor-grab active:cursor-grabbing mb-4 shadow-inner">
+                    <div id="canvas3DContainer" class="w-full ${obj.isSystem ? 'h-80' : 'h-52'} bg-slate-950/80 rounded-2xl border border-slate-800/80 relative overflow-hidden flex items-center justify-center cursor-grab active:cursor-grabbing mb-4 shadow-inner" style="touch-action: none;">
                         </div>
 
                     <div class="overflow-y-auto custom-scrollbar pr-2 flex-1">
@@ -722,7 +722,7 @@
                 }
             }
 
-            // 6. KONTROL MOUSE INTERAKTIF
+            // 6. KONTROL MOUSE (DESKTOP)
             container.addEventListener('mousedown', (e) => {
                 isDragging = true;
                 previousMousePosition = { x: e.clientX, y: e.clientY };
@@ -753,7 +753,45 @@
             window.addEventListener('mouseup', () => { isDragging = false; });
             window.addEventListener('mouseleave', () => { isDragging = false; });
 
-            // 7. LOOP ANIMASI RENDER
+            // 7. KONTROL SENTUHAN / TOUCH EVENTS (MOBILE & TABLET)
+            container.addEventListener('touchstart', (e) => {
+                isDragging = true;
+                previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            }, { passive: false });
+
+            container.addEventListener('touchmove', (e) => {
+                if (!isDragging) return;
+                
+                // Mencegah halaman ikut terguling (scroll) saat memutar objek
+                e.preventDefault(); 
+
+                const deltaMove = { 
+                    x: e.touches[0].clientX - previousMousePosition.x, 
+                    y: e.touches[0].clientY - previousMousePosition.y 
+                };
+                
+                if (obj.isSystem) {
+                    scene3D.rotation.y += deltaMove.x * 0.005;
+                    scene3D.rotation.x += deltaMove.y * 0.005;
+                } else if (singleMeshObj) {
+                    singleMeshObj.rotation.y += deltaMove.x * 0.007;
+                    singleMeshObj.rotation.x += deltaMove.y * 0.007;
+                    if(cloudsMeshObj) {
+                        cloudsMeshObj.rotation.y += deltaMove.x * 0.007;
+                        cloudsMeshObj.rotation.x += deltaMove.y * 0.007;
+                    }
+                    if (obj.hasRings && singleRingsObj) {
+                        singleRingsObj.rotation.y += deltaMove.x * 0.007;
+                        singleRingsObj.rotation.x += deltaMove.y * 0.007;
+                    }
+                }
+                previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            }, { passive: false });
+
+            window.addEventListener('touchend', () => { isDragging = false; });
+            window.addEventListener('touchcancel', () => { isDragging = false; });
+
+            // 8. LOOP ANIMASI RENDER
             function animate() {
                 animationFrameId3D = requestAnimationFrame(animate);
                 starsMesh.rotation.y += 0.0003; // Rotasi galaksi pelan
